@@ -1,16 +1,22 @@
-# testo
+# Mini Ecommerce - Day 1
 
-A new Flutter project.
+## Description
+Flutter mini-ecommerce app. Day 1 focuses on:
+- Project setup
+- Dependencies (Riverpod, Dio, SharedPreferences, GoRouter)
+- Auth screens (Login/Register)
+- Mock API integration with JWT token persistence
 
-## Getting Started
+## How to Run
+1. Clone repo
+2. Run `flutter pub get`
+3. Run `flutter run`
 
-This project is a starting point for a Flutter application.
+## State Management
+Riverpod
 
-A few resources to get you started if this is your first Flutter project:
+## Assumptions
+Mock API, JWT token stored locally, login works only for `test@test.com / 1234`.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Trade-offs
+Proceeding without backend, using mock data.
