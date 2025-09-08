@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository.dart';
-import '../../../core/session.dart';
-import '../../home/ui/home_screen.dart';
-import 'register_screen.dart';
+import 'login_screen.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   bool loading = false;
@@ -22,15 +20,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final repo = AuthRepository();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Login")),
+      appBar: AppBar(title: const Text("Register")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
               controller: emailCtrl,
-              decoration: const InputDecoration(
-                labelText: "Email"),
+              decoration: const InputDecoration(labelText: "Email"),
             ),
             TextField(
               controller: passCtrl,
@@ -43,43 +40,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ? null
                   : () async {
                       setState(() => loading = true);
-                      final success = await repo.login(
-                        emailCtrl.text,
-                        passCtrl.text,
-                      );
+                      final success =
+                          await repo.register(emailCtrl.text, passCtrl.text);
                       setState(() => loading = false);
                       if (success && context.mounted) {
-                        // Save token (mock or real)
-                        await Session.saveToken("mock-token-123");
-
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Login success")),
-                        );
-
-                        // Navigate to HomeScreen
+                            const SnackBar(content: Text("Registration success")));
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (_) => const HomeScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const LoginScreen()),
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Login failed")),
-                        );
+                            const SnackBar(content: Text("Registration failed")));
                       }
                     },
               child: loading
                   ? const CircularProgressIndicator()
-                  : const Text("Login"),
+                  : const Text("Register"),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
                 );
               },
-              child: const Text("Don’t have an account? Register"),
-            ),
+              child: const Text("Already have an account? Login"),
+            )
           ],
         ),
       ),

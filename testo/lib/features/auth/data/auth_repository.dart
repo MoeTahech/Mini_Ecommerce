@@ -1,13 +1,12 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthRepository {
-  // Mock users database
-  final Map<String, String> _mockUsers = {
-    "test@test.com": "1234", // email: password
+  static final Map<String, String> _mockUsers = {
+    "test@test.com": "1234",
   };
 
   Future<bool> login(String email, String password) async {
-    await Future.delayed(const Duration(seconds: 1)); // simulate network delay
+    await Future.delayed(const Duration(seconds: 1));
     if (_mockUsers[email] == password) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString("token", "mock-token-123");
