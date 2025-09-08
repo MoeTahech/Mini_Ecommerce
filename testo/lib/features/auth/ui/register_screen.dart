@@ -39,21 +39,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onPressed: loading
                   ? null
                   : () async {
+                      final email = emailCtrl.text.trim();
+                      final password = passCtrl.text;
+
+                      if (email.isEmpty || password.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Please fill all fields")),
+                        );
+                        return;
+                      }
+
                       setState(() => loading = true);
-                      final success =
-                          await repo.register(emailCtrl.text, passCtrl.text);
+                      final success = await repo.register(email, password);
                       setState(() => loading = false);
+
                       if (success && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Registration success")));
+                          const SnackBar(content: Text("Registration successful")),
+                        );
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => const LoginScreen()),
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Registration failed")));
+                          const SnackBar(content: Text("User already exists")),
+                        );
                       }
                     },
               child: loading

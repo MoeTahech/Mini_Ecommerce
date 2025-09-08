@@ -12,67 +12,83 @@ class CartScreen extends ConsumerWidget {
     final cartCtrl = ref.read(cartProvider.notifier);
     final ordersCtrl = ref.read(ordersProvider.notifier);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text("Your Cart")),
-      body: cart.isEmpty
-          ? const Center(child: Text("Cart is empty"))
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: cart.length,
-                    itemBuilder: (context, i) {
-                      final item = cart[i];
-                      return ListTile(
-                        title: Text(item.product.name),
-                        subtitle: Text("x${item.quantity}"),
-                        trailing: Text(
-                          "\$${item.totalPrice.toStringAsFixed(2)}",
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        "Subtotal: \$${cartCtrl.subtotal.toStringAsFixed(2)}",
-                      ),
-                      Text("Tax: \$${cartCtrl.tax.toStringAsFixed(2)}"),
-                      Text("Total: \$${cartCtrl.total.toStringAsFixed(2)}"),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Check for stock issues
-                          if (cart.any(
-                            (item) => item.quantity > item.product.stock,
-                          )) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Stock error!")),
-                            );
-                            return;
-                          }
+    if (cart.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.shopping_cart, size: 60, color: Colors.grey),
+            SizedBox(height: 8),
+            Text("Cart is empty", style: TextStyle(fontSize: 18)),
+          ],
+        ),
+      );
+    }
 
-                          // Add order to OrdersProvider
-                          ordersCtrl.addOrder(cart, cartCtrl.total);
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: cart.length,
+            itemBuilder: (context, i) {
+              final item = cart[i];
+              return ListTile(
+                title: Text(item.product.name),
+                subtitle: Text("x${item.quantity}"),
+                trailing: Text("\$${item.totalPrice.toStringAsFixed(2)}"),
+              );
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text("Subtotal: \$${cartCtrl.subtotal.toStringAsFixed(2)}"),
+              Text("Tax: \$${cartCtrl.tax.toStringAsFixed(2)}"),
+              Text("Total: \$${cartCtrl.total.toStringAsFixed(2)}"),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  // Disable if any item exceeds stock
+                  if (cart.any((item) => item.quantity > item.product.stock)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Some items exceed stock!")),
+                    );
+                    return;
+                  }
 
-                          // Clear cart
-                          cartCtrl.clearCart();
+                  try {
+                    // Place order using CartController method
+                    await cartCtrl.placeOrder((productId, qty) async {
+                      // Simulate server stock deduction
+                      final product =
+                          cart.firstWhere((item) => item.product.id == productId).product;
+                      if (qty > product.stock) {
+                        throw Exception("Stock insufficient for ${product.name}");
+                      }
+                      // In real app, update stock on server here
+                    });
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Order placed!")),
-                          );
-                        },
-                        child: const Text("Place Order"),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                    // Add order to OrdersController
+                    ordersCtrl.addOrder(cart, cartCtrl.total);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Order placed!")),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Order failed: ${e.toString()}")),
+                    );
+                  }
+                },
+                child: const Text("Place Order"),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

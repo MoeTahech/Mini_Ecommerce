@@ -3,12 +3,15 @@ import '../../features/orders/data/order_model.dart';
 import '../../features/cart/data/cart_item.dart';
 
 final ordersProvider =
-    StateNotifierProvider<OrdersController, List<Order>>((ref) => OrdersController());
+    StateNotifierProvider<OrdersController, List<Order>>(
+        (ref) => OrdersController());
 
 class OrdersController extends StateNotifier<List<Order>> {
   OrdersController() : super([]);
 
   void addOrder(List<CartItem> cartItems, double total) {
+    if (cartItems.isEmpty) return; // prevent empty orders
+
     final newOrder = Order(
       id: state.isEmpty ? 1 : state.last.id + 1,
       items: cartItems,

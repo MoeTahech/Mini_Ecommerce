@@ -4,6 +4,7 @@ import '../../cart/ui/cart_screen.dart';
 import '../../cart/ui/orders_screen.dart';
 import '../../../core/session.dart';
 import '../../auth/ui/login_screen.dart';
+import '../../admin/ui/admin_home_screen.dart'; // make sure this exists
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,22 @@ class _HomeScreenState extends State<HomeScreen> {
     const OrdersScreen(),
   ];
 
+  void _logout() async {
+    try {
+      await Session.clearToken(); // Clear stored token
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Logout failed, please try again")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,26 +46,32 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              // Clear token
-              await Session.clearToken();
-
-              // Navigate back to login
-              Navigator.pushReplacement(
+            tooltip: "Logout",
+            onPressed: _logout,
+          ),
+          TextButton.icon(
+            onPressed: () {
+              Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                MaterialPageRoute(builder: (_) => const AdminHomeScreen()),
               );
             },
-          )
+            icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+            label: const Text("Admin", style: TextStyle(color: Colors.white)),
+          ),
         ],
       ),
+
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.store), label: "Products"),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: "Cart"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: "Cart",
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: "Orders"),
         ],
       ),

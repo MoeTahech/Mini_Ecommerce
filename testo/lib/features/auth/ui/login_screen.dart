@@ -29,8 +29,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           children: [
             TextField(
               controller: emailCtrl,
-              decoration: const InputDecoration(
-                labelText: "Email"),
+              decoration: const InputDecoration(labelText: "Email"),
             ),
             TextField(
               controller: passCtrl,
@@ -42,28 +41,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onPressed: loading
                   ? null
                   : () async {
-                      setState(() => loading = true);
-                      final success = await repo.login(
-                        emailCtrl.text,
-                        passCtrl.text,
-                      );
-                      setState(() => loading = false);
-                      if (success && context.mounted) {
-                        // Save token (mock or real)
-                        await Session.saveToken("mock-token-123");
+                      final email = emailCtrl.text.trim();
+                      final password = passCtrl.text;
 
+                      if (email.isEmpty || password.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Login success")),
+                          const SnackBar(content: Text("Please fill all fields")),
                         );
+                        return;
+                      }
 
-                        // Navigate to HomeScreen
+                      setState(() => loading = true);
+                      final success = await repo.login(email, password);
+                      setState(() => loading = false);
+
+                      if (success && context.mounted) {
+                        await Session.saveToken("mock-token-${email.hashCode}");
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (_) => const HomeScreen()),
                         );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Login successful")),
+                        );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Login failed")),
+                          const SnackBar(content: Text("Invalid credentials")),
                         );
                       }
                     },

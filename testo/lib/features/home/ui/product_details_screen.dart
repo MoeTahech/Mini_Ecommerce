@@ -14,6 +14,7 @@ class ProductDetailsScreen extends ConsumerStatefulWidget {
 
 class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
   int quantity = 1;
+  bool adding = false;
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +38,8 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
             Row(
               children: [
                 IconButton(
-                  onPressed: quantity > 1
-                      ? () => setState(() => quantity--)
-                      : null,
+                  onPressed:
+                      quantity > 1 ? () => setState(() => quantity--) : null,
                   icon: const Icon(Icons.remove),
                 ),
                 Text(quantity.toString()),
@@ -53,15 +53,30 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: widget.product.stock == 0
+              onPressed: widget.product.stock == 0 || adding
                   ? null
-                  : () {
-                      cartCtrl.addToCart(widget.product, quantity: quantity);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Added to cart")),
-                      );
+                  : () async {
+                      setState(() => adding = true);
+                      try {
+                        cartCtrl.addToCart(widget.product, quantity: quantity);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Added to cart")),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content:
+                                  Text("Failed to add to cart. Try again.")),
+                        );
+                      } finally {
+                        setState(() => adding = false);
+                      }
                     },
-              child: const Text("Add to Cart"),
+              child: adding
+                  ? const CircularProgressIndicator()
+                  : widget.product.stock == 0
+                      ? const Text("Out of stock")
+                      : const Text("Add to Cart"),
             ),
           ],
         ),
