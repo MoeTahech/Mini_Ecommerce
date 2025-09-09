@@ -4,7 +4,7 @@ import 'dart:math';
 class ProductRepository {
   final _random = Random();
 
-  List<Product> _mockProducts = [
+  final List<Product> _mockProducts = [
     Product(
         id: 1,
         name: "Laptop",

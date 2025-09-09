@@ -1,7 +1,7 @@
-# Mini Ecommerce - Day 1 to Day 3
+# Mini Ecommerce - Day 1 to Day 5
 
 ## Description
-Flutter mini-ecommerce app with incremental daily progress.
+Flutter mini-ecommerce app with authentication, product catalog, cart, orders, and admin features. Includes UX improvements and edge-case handling.
 
 ---
 
@@ -13,7 +13,7 @@ Flutter mini-ecommerce app with incremental daily progress.
 
 ---
 
-## Day 2
+## Day 2 & 3
 - Catalog screen: Grid/List of products
 - Product details screen with:
   - Name, price, stock, image
@@ -28,6 +28,26 @@ Flutter mini-ecommerce app with incremental daily progress.
 - Place Order flow:
   - Cart checkout with “Place Order” button
   - Orders screen for users with order ID, date, total
+- Persisted token logout + session clear
+
+---
+
+
+- Admin Home with tabs:
+  - Add Product (with validation)
+  - All Orders (paginated list with totals)
+  - Low Stock (<5 items) highlighted
+
+---
+
+- UX & Edge Cases:
+  - Pull-to-refresh on catalog and orders
+  - Skeleton loaders (future improvement)
+  - Better empty states (cart, catalog, orders)
+  - Snackbar for errors and network issues
+  - Out-of-stock: disabled Add-to-Cart with message
+  - Race condition handling: stock mismatch when placing orders
+  - Auth expiry: clear token and redirect to login
 
 ---
 
@@ -39,24 +59,23 @@ Flutter mini-ecommerce app with incremental daily progress.
 ---
 
 ## State Management
-Riverpod
+**Riverpod**  
 **Reason for choice:**  
-- Simple and easy to learn compared to alternatives like Bloc  
-- Provides clear separation between UI and state logic  
-- Supports both synchronous and asynchronous state  
-- Scales well as the app grows (modular and testable)  
-- Good community support and frequent updates
+- Simple and easy to learn compared to Bloc  
+- Clear separation of UI and state logic  
+- Handles both sync & async state cleanly  
+- Modular, testable, and scalable as app grows  
+- Strong community support and updates  
+
 ---
 
 ## Assumptions
 - Mock API, JWT token stored locally
-- Login works only for `test@test.com / 1234` unless registration implemented
-- Orders and products stored in memory (reset on app restart)
+- Orders and products stored in memory (reset on restart)
 
 ---
 
 ## Trade-offs
-- No real backend, using mock data
-- Limited error handling (basic SnackBars for now)
-- Skeletons/shimmers not yet implemented
-
+- No real backend (mock only)
+- Limited test coverage (only unit + one widget test planned)
+- Skeletons/shimmers not fully implemented yet
