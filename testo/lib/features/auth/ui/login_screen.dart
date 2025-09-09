@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/api_client.dart';
 import '../data/auth_repository.dart';
 import '../../../core/session.dart';
 import '../../home/ui/home_screen.dart';
@@ -19,9 +20,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool loading = false;
   bool _passwordVisible = false;
 
+  late final ApiClient api;
+  late final AuthRepository repo;
+
+  @override
+  void initState() {
+    super.initState();
+    api = ApiClient("http://localhost:8080"); // replace with your backend URL
+    repo = AuthRepository(api);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final repo = AuthRepository();
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -34,7 +44,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             decoration: BoxDecoration(
               color: Colors.grey[100],
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
                   color: Colors.black12,
                   blurRadius: 12,
@@ -68,17 +78,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Email is required";
-                      }
-                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                        return "Enter a valid email";
-                      }
+                      if (value == null || value.isEmpty) return "Email is required";
+                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return "Enter a valid email";
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
 
+                  // Password field
                   TextFormField(
                     controller: passCtrl,
                     obscureText: !_passwordVisible,
@@ -90,34 +97,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _passwordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                          _passwordVisible ? Icons.visibility : Icons.visibility_off,
                           color: Colors.blue[700],
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _passwordVisible = !_passwordVisible;
-                          });
-                        },
+                        onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
                       ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Password is required";
-                      }
-                      if (value.length < 8) {
-                        return "Password must be at least 8 characters";
-                      }
-                      if (!RegExp(r'[A-Za-z]').hasMatch(value)) {
-                        return "Password must contain at least one letter";
-                      }
-                      if (!RegExp(r'[0-9]').hasMatch(value)) {
-                        return "Password must contain at least one number";
-                      }
-                      if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
-                        return "Password must contain at least one symbol";
-                      }
+                      if (value == null || value.isEmpty) return "Password is required";
+                      if (value.length < 8) return "Password must be at least 8 characters";
+                      if (!RegExp(r'[A-Za-z]').hasMatch(value)) return "Password must contain at least one letter";
+                      if (!RegExp(r'[0-9]').hasMatch(value)) return "Password must contain at least one number";
+                      if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) return "Password must contain at least one symbol";
                       return null;
                     },
                   ),
@@ -133,37 +124,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           : () async {
                               if (!_formKey.currentState!.validate()) return;
 
-                              final email = emailCtrl.text.trim();
-                              final password = passCtrl.text;
-
                               setState(() => loading = true);
 
                               try {
-                                final success = await repo.login(
-                                  email,
-                                  password,
-                                );
+                                final token = await repo.login(emailCtrl.text.trim(), passCtrl.text);
 
-                                if (success && context.mounted) {
-                                  await Session.saveToken(
-                                    "mock-token-${email.hashCode}",
-                                  );
+                                if (token != null && context.mounted) {
+                                  await Session.saveToken(token); // persist JWT
                                   Navigator.pushReplacement(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const HomeScreen(),
-                                    ),
+                                    MaterialPageRoute(builder: (_) => const HomeScreen()),
                                   );
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Login successful"),
-                                    ),
+                                    const SnackBar(content: Text("Login successful")),
                                   );
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Invalid credentials"),
-                                    ),
+                                    const SnackBar(content: Text("Invalid credentials")),
                                   );
                                 }
                               } catch (e) {
@@ -176,19 +153,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue[700],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       child: loading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              "Login",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
+                          : const Text("Login", style: TextStyle(fontSize: 16, color: Colors.white)),
                     ),
                   ),
 
@@ -199,15 +168,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
                       );
                     },
-                    child: Text(
-                      "Don’t have an account? Register",
-                      style: TextStyle(color: Colors.blue[700]),
-                    ),
+                    child: Text("Don’t have an account? Register", style: TextStyle(color: Colors.blue[700])),
                   ),
                 ],
               ),

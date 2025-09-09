@@ -1,50 +1,37 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:math';
+import 'package:dio/dio.dart';
+import '../../../core/api_client.dart';
 
 class AuthRepository {
-  static final Map<String, String> _mockUsers = {
-    "admin@test.com": "admin123",
-    "user@test.com": "1234",
-  };
+  final ApiClient api;
 
-  final _random = Random();
+  AuthRepository(this.api);
 
-  Future<bool> login(String email, String password) async {
-    await Future.delayed(const Duration(seconds: 1)); // simulate network
-
-    // Simulate transient network error randomly
-    if (_random.nextInt(10) < 2) throw Exception("Network error");
-
-    if (_mockUsers[email] == password) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString("token", "mock-token-123");
-      return true;
+  Future<String?> login(String email, String password) async {
+    try {
+      final resp = await api.post('/auth/login', {
+        'email': email,
+        'password': password,
+      });
+      if (resp.statusCode == 200) {
+        final token = resp.data['token'] as String;
+        api.setToken(token); // Save token in ApiClient
+        return token;
+      }
+      return null;
+    } on DioException catch (e) {
+      throw e.response?.data['message'] ?? 'Login failed';
     }
-
-    return false;
   }
 
   Future<bool> register(String email, String password) async {
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (_mockUsers.containsKey(email)) return false; // already exists
-    _mockUsers[email] = password;
-    return true;
-  }
-
-  Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("token");
-  }
-
-  Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("token");
-  }
-
-  // Simulate 401 token expiry
-  Future<void> simulate401() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("token"); // invalidate token
+    try {
+      final resp = await api.post('/auth/register', {
+        'email': email,
+        'password': password,
+      });
+      return resp.statusCode == 201;
+    } on DioException catch (e) {
+      throw e.response?.data['message'] ?? 'Register failed';
+    }
   }
 }

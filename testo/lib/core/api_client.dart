@@ -1,21 +1,32 @@
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
-  final Dio dio = Dio(BaseOptions(baseUrl: "http://localhost:8080"));
+  final Dio dio;
+  String? _token;
 
-  ApiClient() {
-    dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final prefs = await SharedPreferences.getInstance();
-          final token = prefs.getString('token');
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          return handler.next(options);
-        },
-      ),
-    );
+  ApiClient(String baseUrl)
+      : dio = Dio(BaseOptions(
+          baseUrl: baseUrl,
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+          headers: {'Content-Type': 'application/json'},
+        ));
+
+  void setToken(String token) {
+    _token = token;
+    dio.options.headers['Authorization'] = 'Bearer $token';
+  }
+
+  void clearToken() {
+    _token = null;
+    dio.options.headers.remove('Authorization');
+  }
+
+  Future<Response> get(String path, {Map<String, dynamic>? query}) async {
+    return await dio.get(path, queryParameters: query);
+  }
+
+  Future<Response> post(String path, dynamic body) async {
+    return await dio.post(path, data: body);
   }
 }
