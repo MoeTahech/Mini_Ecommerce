@@ -63,10 +63,13 @@ class CartScreen extends ConsumerWidget {
                     // Place order using CartController method
                     await cartCtrl.placeOrder((productId, qty) async {
                       // Simulate server stock deduction
-                      final product =
-                          cart.firstWhere((item) => item.product.id == productId).product;
+                      final product = cart
+                          .firstWhere((item) => item.product.id == productId)
+                          .product;
                       if (qty > product.stock) {
-                        throw Exception("Stock insufficient for ${product.name}");
+                        throw Exception(
+                          "Stock insufficient for ${product.name}",
+                        );
                       }
                       // In real app, update stock on server here
                     });
@@ -83,7 +86,12 @@ class CartScreen extends ConsumerWidget {
                     );
                   }
                 },
-                child: const Text("Place Order"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[700], // button background
+                ),
+                child: const Text(
+                  "Place Order",
+                  style: TextStyle(color: Colors.white, fontSize: 16,),),
               ),
             ],
           ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../home/data/product_model.dart';
-//import../../home/data/product_repository.dart';
 import '../../orders/orders_controller.dart';
 import '../data/products_controller.dart';
 
@@ -34,12 +33,16 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen>
   Widget build(BuildContext context) {
     final products = ref.watch(productsProvider);
     final orders = ref.watch(ordersProvider);
+    final lowStock = ref.watch(productsProvider.notifier).lowStock;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.blue[700],
         title: const Text("Admin Home"),
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: Colors.white,
           tabs: const [
             Tab(text: "Add Product"),
             Tab(text: "All Orders"),
@@ -51,101 +54,160 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen>
         controller: _tabController,
         children: [
           // 1️⃣ Add Product Tab
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: ListView(
-                children: [
-                  TextFormField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: "Name"),
-                    validator: (v) =>
-                        v!.isEmpty ? "Enter product name" : null,
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 12,
+                        offset: Offset(0, 6)),
+                  ],
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: nameCtrl,
+                        decoration: InputDecoration(
+                          labelText: "Name",
+                          labelStyle: TextStyle(color: Colors.blue[900]),
+                        ),
+                        validator: (v) =>
+                            v!.isEmpty ? "Enter product name" : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: descCtrl,
+                        decoration: InputDecoration(
+                          labelText: "Description",
+                          labelStyle: TextStyle(color: Colors.blue[900]),
+                        ),
+                        validator: (v) =>
+                            v!.isEmpty ? "Enter description" : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: priceCtrl,
+                        decoration: InputDecoration(
+                          labelText: "Price",
+                          labelStyle: TextStyle(color: Colors.blue[900]),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v!.isEmpty ? "Enter price" : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: stockCtrl,
+                        decoration: InputDecoration(
+                          labelText: "Stock",
+                          labelStyle: TextStyle(color: Colors.blue[900]),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v!.isEmpty ? "Enter stock" : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: imageCtrl,
+                        decoration: InputDecoration(
+                          labelText: "Image URL",
+                          labelStyle: TextStyle(color: Colors.blue[900]),
+                        ),
+                        validator: (v) => v!.isEmpty ? "Enter image URL" : null,
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              final product = Product(
+                                id: products.isEmpty ? 1 : products.last.id + 1,
+                                name: nameCtrl.text,
+                                description: descCtrl.text,
+                                price: double.tryParse(priceCtrl.text) ?? 0,
+                                stock: int.tryParse(stockCtrl.text) ?? 0,
+                                imageUrl: imageCtrl.text,
+                              );
+                              ref
+                                  .read(productsProvider.notifier)
+                                  .addProduct(product);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Product added")),
+                              );
+                              _formKey.currentState!.reset();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue[700],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text("Add Product",
+                              style: TextStyle(fontSize: 16, color: Colors.white)),
+                        ),
+                      ),
+                    ],
                   ),
-                  TextFormField(
-                    controller: descCtrl,
-                    decoration: const InputDecoration(labelText: "Description"),
-                    validator: (v) =>
-                        v!.isEmpty ? "Enter description" : null,
-                  ),
-                  TextFormField(
-                    controller: priceCtrl,
-                    decoration: const InputDecoration(labelText: "Price"),
-                    keyboardType: TextInputType.number,
-                    validator: (v) =>
-                        v!.isEmpty ? "Enter price" : null,
-                  ),
-                  TextFormField(
-                    controller: stockCtrl,
-                    decoration: const InputDecoration(labelText: "Stock"),
-                    keyboardType: TextInputType.number,
-                    validator: (v) =>
-                        v!.isEmpty ? "Enter stock" : null,
-                  ),
-                  TextFormField(
-                    controller: imageCtrl,
-                    decoration: const InputDecoration(labelText: "Image URL"),
-                    validator: (v) =>
-                        v!.isEmpty ? "Enter image URL" : null,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        final product = Product(
-                          id: products.isEmpty ? 1 : products.last.id + 1,
-                          name: nameCtrl.text,
-                          description: descCtrl.text,
-                          price: double.tryParse(priceCtrl.text) ?? 0,
-                          stock: int.tryParse(stockCtrl.text) ?? 0,
-                          imageUrl: imageCtrl.text,
-                        );
-                        ref.read(productsProvider.notifier).addProduct(product);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Product added")),
-                        );
-                        _formKey.currentState!.reset();
-                      }
-                    },
-                    child: const Text("Add Product"),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
 
           // 2️⃣ All Orders Tab
           ListView.builder(
+            padding: const EdgeInsets.all(16),
             itemCount: orders.length,
             itemBuilder: (context, i) {
               final order = orders[i];
-              return ExpansionTile(
-                title: Text("Order #${order.id}"),
-                subtitle: Text(
-                    "Date: ${order.date.toLocal().toString().split(' ')[0]}"),
-                trailing: Text("\$${order.total.toStringAsFixed(2)}"),
-                children: order.items
-                    .map(
-                      (item) => ListTile(
-                        title: Text(item.product.name),
-                        trailing: Text("x${item.quantity}"),
-                      ),
-                    )
-                    .toList(),
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 4,
+                child: ExpansionTile(
+                  title: Text("Order #${order.id}",
+                      style: TextStyle(color: Colors.blue[900])),
+                  subtitle: Text(
+                      "Date: ${order.date.toLocal().toString().split(' ')[0]}"),
+                  trailing:
+                      Text("\$${order.total.toStringAsFixed(2)}", style: TextStyle(color: Colors.blue[700])),
+                  children: order.items
+                      .map(
+                        (item) => ListTile(
+                          title: Text(item.product.name),
+                          trailing: Text("x${item.quantity}"),
+                        ),
+                      )
+                      .toList(),
+                ),
               );
             },
           ),
 
           // 3️⃣ Low Stock Tab
           ListView.builder(
-            itemCount: ref.watch(productsProvider.notifier).lowStock.length,
+            padding: const EdgeInsets.all(16),
+            itemCount: lowStock.length,
             itemBuilder: (context, i) {
-              final product =
-                  ref.watch(productsProvider.notifier).lowStock[i];
-              return ListTile(
-                title: Text(product.name),
-                subtitle: Text("Stock: ${product.stock}"),
+              final product = lowStock[i];
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 4,
+                child: ListTile(
+                  title: Text(product.name, style: TextStyle(color: Colors.blue[900])),
+                  subtitle: Text("Stock: ${product.stock}"),
+                ),
               );
             },
           ),

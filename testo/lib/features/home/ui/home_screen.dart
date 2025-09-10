@@ -4,7 +4,7 @@ import '../../cart/ui/cart_screen.dart';
 import '../../cart/ui/orders_screen.dart';
 import '../../../core/session.dart';
 import '../../auth/ui/login_screen.dart';
-import '../../admin/ui/admin_home_screen.dart'; // make sure this exists
+import '../../admin/ui/admin_home_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _logout() async {
     try {
-      await Session.clearToken(); // Clear stored token
+      await Session.clearToken();
       if (!mounted) return;
 
       Navigator.pushReplacement(
@@ -41,8 +41,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // modern light blue background
       appBar: AppBar(
         title: const Text("Mini Ecommerce"),
+        backgroundColor: Colors.blue[700],
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -61,17 +63,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-
-      body: _pages[_selectedIndex],
+      body: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        width: double.infinity,
+        child: _pages[_selectedIndex], // just the content without Scaffold
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
+        selectedItemColor: Colors.blue[900],
+        unselectedItemColor: Colors.grey,
         onTap: (i) => setState(() => _selectedIndex = i),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.store), label: "Products"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: "Cart",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: "Cart"),
           BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: "Orders"),
         ],
       ),
