@@ -5,6 +5,7 @@ import '../../cart/ui/orders_screen.dart';
 import '../../../core/session.dart';
 import '../../auth/ui/login_screen.dart';
 import '../../admin/ui/admin_home_screen.dart';
+import '../../../core/api_client.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,12 +16,31 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  late ApiClient api;
+  List<Widget>? _pages; // make nullable
 
-  final _pages = [
-    const CatalogScreen(),
-    const CartScreen(),
-    const OrdersScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    api = ApiClient("http://localhost:8080");
+    _loadToken();
+  }
+
+  Future<void> _loadToken() async {
+    final token = await Session.getToken();
+    if (token != null) {
+      api.setToken(token);
+    }
+
+    // Initialize pages after token is set
+    setState(() {
+      _pages = [
+        CatalogScreen(api: api),
+        const CartScreen(),
+        const OrdersScreen(),
+      ];
+    });
+  }
 
   void _logout() async {
     try {
@@ -41,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50], // modern light blue background
+      backgroundColor: Colors.blue[50],
       appBar: AppBar(
         title: const Text("Mini Ecommerce"),
         backgroundColor: Colors.blue[700],
@@ -63,11 +83,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        width: double.infinity,
-        child: _pages[_selectedIndex], // just the content without Scaffold
-      ),
+      body: _pages == null
+          ? const Center(child: CircularProgressIndicator())
+          : _pages!.isEmpty
+              ? const Center(child: Text("No pages loaded"))
+              : _pages![_selectedIndex], // safe access
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue[900],

@@ -1,127 +1,122 @@
 # Mini Ecommerce - Day 1 to Day 5
+
 ## Description
 
-Flutter mini-ecommerce app with authentication, product catalog, cart, orders, and admin features. Includes modern UX improvements, password/email validation, show/hide password, and edge-case handling. Mock backend with in-memory storage and JWT token persistence.
+Flutter mini-ecommerce app with authentication, product catalog, cart, orders, and admin features. Includes modern UX improvements, password/email validation, show/hide password, edge-case handling, and a cohesive blue-themed UI. Mock backend with in-memory storage and JWT token persistence.
+
+---
 
 ### Day 1
 
-Project setup
+**Project setup**
 
-Dependencies (Riverpod, Dio, SharedPreferences, GoRouter)
+- Dependencies: Riverpod, Dio, SharedPreferences, GoRouter
+- Auth screens: Login/Register (fully working with Spring Boot backend)
+- Modern vertical card UI
+- Blue theme with white button text
+- Email & password validation:
+  - Email must contain `@` and valid format
+  - Password: min 8 chars, at least one letter, one number, one symbol
+  - Confirm password validation
+- Show/hide password icons for better UX
+- JWT token persistence after successful login/register
+---
 
-Auth screens (Login/Register)
+### Day 2 & 3
 
-Modern vertical card UI
+**Catalog screen**
 
-Blue theme with white button text
+- Grid/List of products with modern cards
+- Pull-to-refresh support
+- Skeleton loaders placeholders for loading state
+- Empty state handling with friendly message
+- Out-of-stock badge displayed on products
 
-Email & password validation:
+**Product details screen**
 
-Email must contain @ and valid format
+- Name, price, stock, image
+- Blue-themed layout
+- Add/remove quantity to cart
+- Add to cart button disables when out-of-stock
+- Snackbars for success/error messages
 
-Password: min 8 chars, at least one letter, one number, one symbol
+**Cart screen**
 
-Confirm password validation
+- Items added, quantity updates, subtotal
+- Place Order flow with modern "Place Order" button
+- Out-of-stock handling
+- Total includes taxes if applicable
 
-Show/hide password icons for better UX
+**Orders screen**
 
-Mock API integration with JWT token persistence
+- Shows order ID, date, total
+- Items listed with quantities
+- Clear empty states and skeletons for loading
 
-###  Day 2 & 3
+**Admin Home**
 
-Catalog screen: Grid/List of products
+- Tabs: Add Product, All Orders, Low Stock
+- Modern form design with validation
+- All Orders tab: shows order list with totals
+- Low Stock tab: highlights items with stock < 5
 
-Product details screen with:
+---
 
-Name, price, stock, image
+### UX & Edge Cases
 
-Add/remove quantity to cart
+- Consistent blue-themed modern design across all screens
+- Pull-to-refresh on catalog and orders
+- Skeleton loaders (future improvement)
+- Better empty states (cart, catalog, orders)
+- Snackbar for errors and network issues
+- Out-of-stock: disabled Add-to-Cart with message
+- Race condition handling: stock mismatch when placing orders
+- Auth expiry: clear token and redirect to login
+- Home, Catalog, Product Details, Cart, Orders, and Admin screens now match Login/Register styling
 
-Cart screen basics:
-
-Items added, quantity updates, subtotal
-
-Out-of-stock handling: disable add-to-cart button
-
-Basic error handling with SnackBars
-
-Place Order flow:
-
-Cart checkout with “Place Order” button
-
-Orders screen for users with order ID, date, total
-
-Persisted token logout + session clear
-
-Admin Home with tabs:
-
-Add Product (with validation)
-
-All Orders (paginated list with totals)
-
-Low Stock (<5 items) highlighted
-
-UX & Edge Cases:
-
-Pull-to-refresh on catalog and orders
-
-Skeleton loaders (future improvement)
-
-Better empty states (cart, catalog, orders)
-
-Snackbar for errors and network issues
-
-Out-of-stock: disabled Add-to-Cart with message
-
-Race condition handling: stock mismatch when placing orders
-
-Auth expiry: clear token and redirect to login
+---
 
 ## Generated Plugin Files
 
 Flutter auto-generates these for platform plugins:
 
-linux/flutter/generated_plugin_registrant.*
+- linux/flutter/generated_plugin_registrant.*
+- windows/flutter/generated_plugin_registrant.*
+- macos/Flutter/GeneratedPluginRegistrant.swift
 
-windows/flutter/generated_plugin_registrant.*
+> ⚠️ These are excluded from this commit to keep repo clean.
 
-macos/Flutter/GeneratedPluginRegistrant.swift
-
-Included in this repo to ensure out-of-the-box build on all platforms.
+---
 
 ## How to Run
 
-Clone repo
+- Clone repo
+- Run `flutter pub get`
+- Run `flutter run`
 
-Run flutter pub get
-
-Run flutter run
+---
 
 ## State Management
 
-Riverpod
-Reason for choice:
+**Riverpod**
 
-Simple and easy to learn compared to Bloc
+- Simple and easy to learn compared to Bloc
+- Clear separation of UI and state logic
+- Handles both sync & async state cleanly
+- Modular, testable, and scalable as app grows
+- Strong community support and updates
 
-Clear separation of UI and state logic
-
-Handles both sync & async state cleanly
-
-Modular, testable, and scalable as app grows
-
-Strong community support and updates
+---
 
 ## Assumptions
 
-Mock API, JWT token stored locally
+- Mock API, JWT token stored locally
+- Orders and products stored in memory (reset on restart)
 
-Orders and products stored in memory (reset on restart)
+---
 
 ## Trade-offs
 
-No real backend (mock only)
-
-Limited test coverage (only unit + one widget test planned)
-
-Skeletons/shimmers not fully implemented yet
+- No real backend (mock only)
+- Limited test coverage (only unit + one widget test planned)
+- Skeletons/shimmers not fully implemented yet

@@ -15,6 +15,17 @@ class Product {
     required this.imageUrl,
   });
 
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'],
+      name: json['name'],
+      description: "No description", // placeholder
+      price: (json['price'] as num).toDouble(),
+      stock: json['stock'],
+      imageUrl: "https://via.placeholder.com/150", // placeholder image
+    );
+  }
+
   Product copyWith({
     int? id,
     String? name,

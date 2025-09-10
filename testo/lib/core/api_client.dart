@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 class ApiClient {
   final Dio dio;
-  String? _token;
+  String? token;
 
   ApiClient(String baseUrl)
       : dio = Dio(BaseOptions(
@@ -13,12 +13,12 @@ class ApiClient {
         ));
 
   void setToken(String token) {
-    _token = token;
+    token = token;
     dio.options.headers['Authorization'] = 'Bearer $token';
   }
 
   void clearToken() {
-    _token = null;
+    token = null;
     dio.options.headers.remove('Authorization');
   }
 
