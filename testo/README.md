@@ -2,7 +2,7 @@
 
 ## Description
 
-Flutter mini-ecommerce app with authentication, product catalog, cart, orders, and admin features. Includes modern UX improvements, password/email validation, show/hide password, edge-case handling, and a cohesive blue-themed UI. Mock backend with in-memory storage and JWT token persistence.
+Flutter mini-ecommerce app with authentication, product catalog, cart, orders, and admin features. Includes modern UX improvements, password/email validation, show/hide password, edge-case handling, and a cohesive blue-themed UI. Backend is Spring Boot with JWT authentication, now fully integrated with catalog and product details screens tested using H2 database.
 
 ---
 
@@ -20,6 +20,7 @@ Flutter mini-ecommerce app with authentication, product catalog, cart, orders, a
   - Confirm password validation
 - Show/hide password icons for better UX
 - JWT token persistence after successful login/register
+
 ---
 
 ### Day 2 & 3
@@ -31,6 +32,7 @@ Flutter mini-ecommerce app with authentication, product catalog, cart, orders, a
 - Skeleton loaders placeholders for loading state
 - Empty state handling with friendly message
 - Out-of-stock badge displayed on products
+- Tested by inserting products directly into H2 database
 
 **Product details screen**
 
@@ -73,6 +75,7 @@ Flutter mini-ecommerce app with authentication, product catalog, cart, orders, a
 - Race condition handling: stock mismatch when placing orders
 - Auth expiry: clear token and redirect to login
 - Home, Catalog, Product Details, Cart, Orders, and Admin screens now match Login/Register styling
+- Catalog and Product Details screens fully working with backend and tested via H2 database
 
 ---
 
@@ -93,6 +96,7 @@ Flutter auto-generates these for platform plugins:
 - Clone repo
 - Run `flutter pub get`
 - Run `flutter run`
+- Spring Boot backend should run on `http://localhost:8080` with H2 database
 
 ---
 
@@ -110,13 +114,15 @@ Flutter auto-generates these for platform plugins:
 
 ## Assumptions
 
-- Mock API, JWT token stored locally
-- Orders and products stored in memory (reset on restart)
+- Backend is Spring Boot with H2 database
+- JWT token stored locally
+- Orders and products persist in H2 database (reset on restart)
+- Catalog and Product Details tested by inserting products into H2
 
 ---
 
 ## Trade-offs
 
-- No real backend (mock only)
+- Mock API replaced with Spring Boot backend
 - Limited test coverage (only unit + one widget test planned)
 - Skeletons/shimmers not fully implemented yet

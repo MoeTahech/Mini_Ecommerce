@@ -11,6 +11,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -32,25 +35,29 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(request -> {
+                    CorsConfiguration config = new CorsConfiguration();
+                    config.setAllowedOrigins(List.of("http://localhost:50399")); // your Flutter Web URL
+                    config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+                    config.setAllowedHeaders(List.of("*"));
+                    config.setAllowCredentials(true);
+                    return config;
+                }))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/h2-console/**").permitAll() // public endpoints
-                        .requestMatchers("/products").hasAnyAuthority("USER", "ADMIN") // GET /products
-                        .requestMatchers("/products/**").hasAuthority("ADMIN")         // POST /products
-                        .requestMatchers("/admin/**").hasAuthority("ADMIN")           // admin endpoints
-                        .anyRequest().authenticated() // fallback
+                        .requestMatchers("/auth/**", "/h2-console/**").permitAll()
+                        .requestMatchers("/products").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers("/products/**").hasAuthority("ADMIN")
+                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
+                        .anyRequest().authenticated()
                 )
-
-                .headers(headers ->
-                        headers.frameOptions(frame -> frame.disable()) // non-deprecated way
-                );
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         http.addFilterBefore(new JwtFilters(jwtUtils, userRepository),
                 UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
