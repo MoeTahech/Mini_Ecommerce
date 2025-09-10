@@ -1,30 +1,46 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/orders/data/order_model.dart';
-import '../../features/cart/data/cart_item.dart';
+import '../../features/orders/data/order_model.dart' as models;
+import '../cart/data/cart_item.dart';
+import '../../../core/api_client.dart';
+import '../../../core/session.dart';
 
 final ordersProvider =
-    StateNotifierProvider<OrdersController, List<Order>>(
-        (ref) => OrdersController());
+    StateNotifierProvider<OrdersController, List<models.Order>>(
+        (ref) => OrdersController(ref));
 
-class OrdersController extends StateNotifier<List<Order>> {
-  OrdersController() : super([]);
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient("http://localhost:8080"); // adjust your baseUrl
+});
 
-  void addOrder(List<CartItem> cartItems, double total) {
-    if (cartItems.isEmpty) return; // prevent empty orders
+class OrdersController extends StateNotifier<List<models.Order>> {
+  final Ref ref;
+  OrdersController(this.ref) : super([]);
 
-    // Compute total if the passed value is 0 or negative
-    final double orderTotal = total <= 0
-        ? cartItems.fold(0, (sum, item) => sum + item.product.price * item.quantity)
-        : total;
+  Future<void> fetchUserOrders() async {
+    final token = await Session.getToken();
+    if (token == null) throw Exception("User not logged in");
 
-    final newOrder = Order(
+    final api = ref.read(apiClientProvider);
+    api.setToken(token);
+
+    final response = await api.get('/orders/me');
+
+    if (response.statusCode == 200) {
+      final data = response.data as List;
+      state = data.map((json) => models.Order.fromJson(json)).toList();
+    } else {
+      throw Exception("Failed to fetch orders");
+    }
+  }
+
+  void addOrderFromCart(List<CartItem> cartItems) {
+    final total = cartItems.fold<double>(0.0, (sum, item) => sum + item.totalPrice);
+    final newOrder = models.Order(
       id: state.isEmpty ? 1 : state.last.id + 1,
       items: cartItems,
-      total: orderTotal,
       date: DateTime.now(),
+      total: total,
     );
-
     state = [...state, newOrder];
   }
 }
-

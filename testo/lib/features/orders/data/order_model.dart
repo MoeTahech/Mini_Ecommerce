@@ -4,20 +4,26 @@ class Order {
   final int id;
   final List<CartItem> items;
   final DateTime date;
-
-  // Global tax rate (e.g., 10%)
-  static const double taxRate = 0.10;
-
-double get total {
-  final subtotal = items.fold(
-      0.0, (double sum, item) => sum + item.product.price * item.quantity);
-  return subtotal * (1 + taxRate);
-}
+  final double total;
 
   Order({
     required this.id,
     required this.items,
     required this.date,
-    double? total, // optional for backward compatibility
+    required this.total,
   });
+
+  factory Order.fromJson(Map<String, dynamic> json) {
+    final itemsJson = json['items'] as List? ?? [];
+    final items = itemsJson
+        .map((i) => CartItem.fromJson(i as Map<String, dynamic>))
+        .toList();
+
+    return Order(
+      id: json['id'] as int,
+      items: items,
+      date: DateTime.parse(json['createdAt'] as String),
+      total: (json['total'] as num).toDouble(),
+    );
+  }
 }

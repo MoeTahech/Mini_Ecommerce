@@ -1,13 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../cart/data/cart_item.dart';
 import '../../home/data/product_model.dart';
+import '../../../core/api_client.dart';
+import '../../../core/session.dart';
+
+// Provider for ApiClient (replace with your backend URL)
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient("http://localhost:8080"); // adjust baseUrl
+});
 
 final cartProvider =
     StateNotifierProvider<CartController, List<CartItem>>(
-        (ref) => CartController());
+        (ref) => CartController(ref));
 
 class CartController extends StateNotifier<List<CartItem>> {
-  CartController() : super([]);
+  final Ref ref;
+  CartController(this.ref) : super([]);
 
   void addToCart(Product product, {int quantity = 1}) {
     final index = state.indexWhere((item) => item.product.id == product.id);
@@ -17,8 +25,6 @@ class CartController extends StateNotifier<List<CartItem>> {
       if (newQuantity <= product.stock) {
         state[index] = CartItem(product: item.product, quantity: newQuantity);
         state = [...state];
-      } else {
-        // Optional: show toast/snackbar from UI about stock limit
       }
     } else {
       if (quantity <= product.stock) {
@@ -34,26 +40,38 @@ class CartController extends StateNotifier<List<CartItem>> {
   void clearCart() => state = [];
 
   double get subtotal => state.fold(0, (sum, item) => sum + item.totalPrice);
-
   double get tax => subtotal * 0.1;
-
   double get total => subtotal + tax;
 
-  /// New method to safely place order, handling stock race conditions
-  Future<void> placeOrder(Future<void> Function(int productId, int quantity) reduceStockFunc) async {
-    // Check stock for all items
-    for (final item in state) {
-      if (item.quantity > item.product.stock) {
-        throw Exception("Stock changed for ${item.product.name}");
+  /// Place order safely
+  Future<void> placeOrder() async {
+    if (state.isEmpty) throw Exception("Cart is empty");
+
+    final token = await Session.getToken();
+    if (token == null) throw Exception("User not logged in");
+
+    final api = ref.read(apiClientProvider);
+    api.setToken(token);
+
+    final itemsPayload = state
+        .map((item) => {"productId": item.product.id, "quantity": item.quantity})
+        .toList();
+
+    print("Placing order: $itemsPayload");
+
+    try {
+      final response = await api.post('/orders', {"items": itemsPayload});
+
+      print("Response: ${response.statusCode} ${response.data}");
+
+      if (response.statusCode == 201) {
+        clearCart();
+      } else {
+        throw Exception(
+            "Failed to place order: ${response.data ?? 'No response data'}");
       }
+    } catch (e) {
+      throw Exception("Order request failed: $e");
     }
-
-    // Reduce stock (simulate server update)
-    for (final item in state) {
-      await reduceStockFunc(item.product.id, item.quantity);
-    }
-
-    // Clear cart
-    clearCart();
   }
 }

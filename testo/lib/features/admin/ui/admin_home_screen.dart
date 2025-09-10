@@ -27,6 +27,18 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     ref.read(productsProvider.notifier).fetchProducts();
+    ref.read(ordersProvider.notifier).fetchUserOrders();
+  }
+
+  @override
+  void dispose() {
+    nameCtrl.dispose();
+    descCtrl.dispose();
+    priceCtrl.dispose();
+    stockCtrl.dispose();
+    imageCtrl.dispose();
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -126,7 +138,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen>
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (_formKey.currentState!.validate()) {
                               final product = Product(
                                 id: products.isEmpty ? 1 : products.last.id + 1,
@@ -136,13 +148,23 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen>
                                 stock: int.tryParse(stockCtrl.text) ?? 0,
                                 imageUrl: imageCtrl.text,
                               );
-                              ref
-                                  .read(productsProvider.notifier)
-                                  .addProduct(product);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Product added")),
-                              );
-                              _formKey.currentState!.reset();
+
+                              try {
+                                await ref
+                                    .read(productsProvider.notifier)
+                                    .addProduct(product); // send to backend
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text("Product added")),
+                                );
+                                _formKey.currentState!.reset();
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          "Failed to add product: $e")),
+                                );
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -152,7 +174,8 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen>
                             ),
                           ),
                           child: const Text("Add Product",
-                              style: TextStyle(fontSize: 16, color: Colors.white)),
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.white)),
                         ),
                       ),
                     ],
@@ -163,34 +186,41 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen>
           ),
 
           // 2️⃣ All Orders Tab
-          ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: orders.length,
-            itemBuilder: (context, i) {
-              final order = orders[i];
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 4,
-                child: ExpansionTile(
-                  title: Text("Order #${order.id}",
-                      style: TextStyle(color: Colors.blue[900])),
-                  subtitle: Text(
-                      "Date: ${order.date.toLocal().toString().split(' ')[0]}"),
-                  trailing:
-                      Text("\$${order.total.toStringAsFixed(2)}", style: TextStyle(color: Colors.blue[700])),
-                  children: order.items
-                      .map(
-                        (item) => ListTile(
-                          title: Text(item.product.name),
-                          trailing: Text("x${item.quantity}"),
-                        ),
-                      )
-                      .toList(),
-                ),
-              );
-            },
+          RefreshIndicator(
+            onRefresh: () =>
+                ref.read(ordersProvider.notifier).fetchUserOrders(),
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: orders.length,
+              itemBuilder: (context, i) {
+                final order = orders[i];
+                final totalItems =
+                    order.items.fold<int>(0, (sum, item) => sum + item.quantity);
+
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 4,
+                  child: ExpansionTile(
+                    title: Text("Order #${order.id}",
+                        style: TextStyle(color: Colors.blue[900])),
+                    subtitle: Text(
+                        "Date: ${order.date.toLocal().toString().split(' ')[0]} - $totalItems items"),
+                    trailing: Text("\$${order.total.toStringAsFixed(2)}",
+                        style: TextStyle(color: Colors.blue[700])),
+                    children: order.items
+                        .map(
+                          (item) => ListTile(
+                            title: Text(item.product.name),
+                            trailing: Text("x${item.quantity}"),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                );
+              },
+            ),
           ),
 
           // 3️⃣ Low Stock Tab
@@ -205,7 +235,8 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen>
                     borderRadius: BorderRadius.circular(14)),
                 elevation: 4,
                 child: ListTile(
-                  title: Text(product.name, style: TextStyle(color: Colors.blue[900])),
+                  title: Text(product.name,
+                      style: TextStyle(color: Colors.blue[900])),
                   subtitle: Text("Stock: ${product.stock}"),
                 ),
               );

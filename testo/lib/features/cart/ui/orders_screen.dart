@@ -6,7 +6,20 @@ class OrdersScreen extends ConsumerWidget {
   const OrdersScreen({super.key});
 
   Future<void> _refreshOrders(WidgetRef ref) async {
-    ref.invalidate(ordersProvider);
+    await ref.read(ordersProvider.notifier).fetchUserOrders();
+  }
+
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 
   @override
@@ -14,37 +27,62 @@ class OrdersScreen extends ConsumerWidget {
     final orders = ref.watch(ordersProvider);
 
     if (orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.list_alt, size: 60, color: Colors.grey),
-            SizedBox(height: 8),
-            Text("No orders yet", style: TextStyle(fontSize: 18)),
-          ],
-        ),
-      );
+      return const Center(child: Text("No orders yet"));
     }
+
+    final sortedOrders = [...orders]..sort((a, b) => b.date.compareTo(a.date));
 
     return RefreshIndicator(
       onRefresh: () => _refreshOrders(ref),
       child: ListView.builder(
-        itemCount: orders.length,
+        padding: const EdgeInsets.all(12),
+        itemCount: sortedOrders.length,
         itemBuilder: (context, i) {
-          final order = orders[i];
-          return ExpansionTile(
-            title: Text("Order #${order.id}"),
-            subtitle: Text(
-                "Date: ${order.date.toLocal().toString().split(' ')[0]}"),
-            trailing: Text("\$${order.total.toStringAsFixed(2)}"),
-            children: order.items
-                .map(
-                  (item) => ListTile(
-                    title: Text(item.product.name),
-                    trailing: Text("x${item.quantity}"),
+          final order = sortedOrders[i];
+
+          // Example: fake status if your backend doesn't have it yet
+          final status = i % 2 == 0 ? "Completed" : "Pending";
+
+          return Card(
+            color: order.total > 500 ? Colors.green[50] : Colors.white,
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
+            elevation: 4,
+            child: ExpansionTile(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Order #${order.id}"),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _statusColor(status),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      status,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ),
-                )
-                .toList(),
+                ],
+              ),
+              subtitle: Text(
+                  "Date: ${order.date.toLocal().toString().split(' ')[0]}"),
+              trailing: Text("\$${order.total.toStringAsFixed(2)}",
+                  style: const TextStyle(color: Colors.blue)),
+              children: order.items
+                  .map(
+                    (item) => ListTile(
+                      title: Text(item.product.name),
+                      subtitle: Text("Quantity: ${item.quantity}"),
+                      trailing:
+                          Text("\$${item.totalPrice.toStringAsFixed(2)}"),
+                    ),
+                  )
+                  .toList(),
+            ),
           );
         },
       ),

@@ -12,33 +12,54 @@ class CartScreen extends ConsumerWidget {
     final cartCtrl = ref.read(cartProvider.notifier);
     final ordersCtrl = ref.read(ordersProvider.notifier);
 
-    if (cart.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.shopping_cart, size: 60, color: Colors.grey),
-            SizedBox(height: 8),
-            Text("Cart is empty", style: TextStyle(fontSize: 18)),
-          ],
-        ),
-      );
-    }
-
     return Column(
       children: [
         Expanded(
-          child: ListView.builder(
-            itemCount: cart.length,
-            itemBuilder: (context, i) {
-              final item = cart[i];
-              return ListTile(
-                title: Text(item.product.name),
-                subtitle: Text("x${item.quantity}"),
-                trailing: Text("\$${item.totalPrice.toStringAsFixed(2)}"),
-              );
-            },
-          ),
+          child: cart.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.shopping_cart, size: 60, color: Colors.grey),
+                      SizedBox(height: 8),
+                      Text("Cart is empty", style: TextStyle(fontSize: 18)),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: cart.length,
+                  itemBuilder: (context, i) {
+                    final item = cart[i];
+                    return ListTile(
+                      leading: item.product.imageUrl != null
+                          ? Image.network(item.product.imageUrl!, width: 50)
+                          : const Icon(Icons.image_not_supported),
+                      title: Text(item.product.name),
+                      subtitle: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle),
+                            onPressed: () {
+                              if (item.quantity > 1) {
+                                cartCtrl.addToCart(item.product, quantity: -1);
+                              } else {
+                                cartCtrl.removeFromCart(item.product);
+                              }
+                            },
+                          ),
+                          Text("${item.quantity}"),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle),
+                            onPressed: () {
+                              cartCtrl.addToCart(item.product);
+                            },
+                          ),
+                        ],
+                      ),
+                      trailing: Text("\$${item.totalPrice.toStringAsFixed(2)}"),
+                    );
+                  },
+                ),
         ),
         Padding(
           padding: const EdgeInsets.all(16),
@@ -50,48 +71,31 @@ class CartScreen extends ConsumerWidget {
               Text("Total: \$${cartCtrl.total.toStringAsFixed(2)}"),
               const SizedBox(height: 10),
               ElevatedButton(
-                onPressed: () async {
-                  // Disable if any item exceeds stock
-                  if (cart.any((item) => item.quantity > item.product.stock)) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Some items exceed stock!")),
-                    );
-                    return;
-                  }
-
-                  try {
-                    // Place order using CartController method
-                    await cartCtrl.placeOrder((productId, qty) async {
-                      // Simulate server stock deduction
-                      final product = cart
-                          .firstWhere((item) => item.product.id == productId)
-                          .product;
-                      if (qty > product.stock) {
-                        throw Exception(
-                          "Stock insufficient for ${product.name}",
-                        );
-                      }
-                      // In real app, update stock on server here
-                    });
-
-                    // Add order to OrdersController
-                    ordersCtrl.addOrder(cart, cartCtrl.total);
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Order placed!")),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Order failed: ${e.toString()}")),
-                    );
-                  }
-                },
+                onPressed: cart.isEmpty
+                    ? null // disable if cart is empty
+                    : () async {
+                        try {
+                          await cartCtrl.placeOrder(); // send order to backend
+                          ordersCtrl.fetchUserOrders();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Order placed successfully!")),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content:
+                                    Text("Order failed: ${e.toString()}")),
+                          );
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[700], // button background
+                  backgroundColor: Colors.blue[700],
                 ),
                 child: const Text(
                   "Place Order",
-                  style: TextStyle(color: Colors.white, fontSize: 16,),),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
               ),
             ],
           ),

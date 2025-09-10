@@ -19,11 +19,22 @@ class Product {
     return Product(
       id: json['id'],
       name: json['name'],
-      description: "No description", // placeholder
+      description: json['description'] ?? "No description",
       price: (json['price'] as num).toDouble(),
       stock: json['stock'],
-      imageUrl: "https://via.placeholder.com/150", // placeholder image
+      imageUrl: json['imageUrl'] ??
+          "https://via.placeholder.com/150", // placeholder image
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "name": name,
+      "description": description,
+      "price": price,
+      "stock": stock,
+      "imageUrl": imageUrl,
+    };
   }
 
   Product copyWith({
@@ -44,3 +55,4 @@ class Product {
     );
   }
 }
+

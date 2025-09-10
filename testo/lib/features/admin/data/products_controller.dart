@@ -1,50 +1,53 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../home/data/product_model.dart';
-import '../../home/data/product_repository.dart';
 import '../../../core/api_client.dart';
 import '../../../core/session.dart';
+import '../../home/data/product_model.dart';
 
-// 1️⃣ Provider for ProductsController
+// ApiClient provider (backend)
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient("http://localhost:8080"); // adjust baseUrl
+});
+
 final productsProvider =
     StateNotifierProvider<ProductsController, List<Product>>(
-  (ref) {
-    final api = ApiClient("http://localhost:8080");
-    // Set token if user is logged in
-    Session.getToken().then((token) {
-      if (token != null) api.setToken(token);
-    });
-    return ProductsController(api);
-  },
-);
+        (ref) => ProductsController(ref));
 
-// 2️⃣ ProductsController class
 class ProductsController extends StateNotifier<List<Product>> {
-  final ProductRepository repo;
-
-  ProductsController(ApiClient api)
-      : repo = ProductRepository(api),
-        super([]) {
-    fetchProducts(); // Automatically fetch products on creation
-  }
+  final Ref ref;
+  List<Product> lowStock = [];
+  ProductsController(this.ref) : super([]);
 
   // Fetch products from backend
   Future<void> fetchProducts() async {
-    try {
-      final products = await repo.fetchProducts();
-      state = products;
-    } catch (e) {
-      // You can also handle errors here or rethrow
-      print('Error fetching products: $e');
-      state = [];
+    final token = await Session.getToken();
+    final api = ref.read(apiClientProvider);
+    if (token != null) api.setToken(token);
+
+    final response = await api.get('/products');
+    if (response.statusCode == 200) {
+      final data = response.data as List;
+      state = data.map((json) => Product.fromJson(json)).toList();
+
+      // Update low-stock list
+      lowStock = state.where((p) => p.stock <= 5).toList();
     }
   }
 
-  // Add a product locally (for admin adding)
-  void addProduct(Product product) {
-    state = [...state, product];
-  }
+  // Add product (POST /products)
+  Future<void> addProduct(Product product) async {
+    final token = await Session.getToken();
+    if (token == null) throw Exception("Admin not logged in");
 
-  // Low stock filter
-  List<Product> get lowStock =>
-      state.where((product) => product.stock < 5).toList();
+    final api = ref.read(apiClientProvider);
+    api.setToken(token);
+
+    final response = await api.post('/products', product.toJson());
+    if (response.statusCode == 201) {
+      state = [...state, Product.fromJson(response.data)];
+      // Update low-stock
+      lowStock = state.where((p) => p.stock <= 5).toList();
+    } else {
+      throw Exception("Failed to add product");
+    }
+  }
 }
